@@ -20,6 +20,11 @@ For CMD activation use `venv\Scripts\activate.bat`. Open `http://127.0.0.1:5000`
 
 Run tests with `pytest`.
 
+## Vercel deployment
+The repository is ready for a Flask deployment on Vercel. Import `tej2628/ai-nids` at [Vercel](https://vercel.com/new), leave the root directory as `./`, and deploy; Vercel detects the top-level Flask `app` automatically. Alternatively, authenticate with the Vercel CLI and run `vercel --prod` from the project root. The included `vercel.json`, `.python-version`, public assets, and trained synthetic-demo model support that deployment.
+
+Vercel Functions have ephemeral local storage. Dashboard events and logs reset when an instance changes, live packet capture cannot run, and retraining is deliberately disabled there. For a persistent deployment, replace SQLite with a managed database (for example Vercel Postgres/Neon) and store model artifacts in durable object storage or commit a reviewed model artifact before redeploying.
+
 ## Dataset and training
 Place CSV files in `data/raw/`, then run `python -m src.train_model data/raw/your_file.csv`. Supported common label names include `Label`, `label`, `Class`, `class`, and `attack_cat`. Categorical columns use one-hot encoding; numerical missing values use median imputation; infinite values become missing; duplicate rows are removed. Labels including BENIGN and NORMAL become NORMAL; all other labels are consolidated to ATTACK for the baseline detector. The train/test split is stratified and all transformations are fit only on training data. Random Forest class weights address imbalance; the saved metrics report class distribution.
 

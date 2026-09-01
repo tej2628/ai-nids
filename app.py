@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, request
-from config import SECRET_KEY, HOST, PORT, MODEL_PATH, METRICS_PATH, RAW_DATA_DIR
+from config import SECRET_KEY, HOST, PORT, MODEL_PATH, METRICS_PATH, RAW_DATA_DIR, IS_SERVERLESS
 from src.database import init_database, get_stats, get_recent_detections
 from src.detector import Detector
 from src.demo import DemoRunner
@@ -8,7 +8,7 @@ from src.train_model import train
 from src.utils import logger
 import json
 
-app = Flask(__name__); app.config.update(SECRET_KEY=SECRET_KEY, MAX_CONTENT_LENGTH=20*1024*1024)
+app = Flask(__name__, static_folder="public/assets", static_url_path="/assets"); app.config.update(SECRET_KEY=SECRET_KEY, MAX_CONTENT_LENGTH=20*1024*1024)
 init_database(); detector = None; demo = None; monitor = None
 
 def services():
@@ -42,6 +42,8 @@ def api_detections(): return jsonify(get_recent_detections(request.args.get("lim
 def api_model(): return jsonify(model_info())
 @app.post("/api/train")
 def api_train():
+    if IS_SERVERLESS:
+        return jsonify(error="Model retraining is disabled on Vercel because its filesystem is ephemeral. Train locally and redeploy the model artifact."), 501
     path=RAW_DATA_DIR / request.json.get("filename","synthetic_demo.csv") if request.is_json else RAW_DATA_DIR / "synthetic_demo.csv"
     try: return jsonify(train(path))
     except Exception as exc: logger.exception("Training failed"); return jsonify(error=str(exc)), 400
